@@ -37,7 +37,6 @@ To build and run the Docker container:
 
 This setup ensures that your Docker container can utilize GPU resources when available, falling back to CPU when GPUs are not accessibl
 
-
 ---
 
 To set up a Docker image based on Ubuntu for PyTorch that supports both CPU and GPU usage, you'll start with an Ubuntu base image and manually install the necessary components like Python, PyTorch, CUDA, and cuDNN. This approach gives you more control over the versions and the setup.
@@ -93,6 +92,7 @@ CMD ["python", "app.py"]
 6. **Working Directory and Application Code**: Sets the working directory and copies your application code into the image.
 
 **Building and Running the Docker Container:**
+
 - **Build the Image**: `docker build -t my-pytorch-app .`
 - **Run the Container**:
   - On CPU: `docker run my-pytorch-app`
