@@ -5,39 +5,52 @@
 # =============================================================================
 
 # Use the official PyTorch image from NVIDIA as a base image
-FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
-
-
-
-
+# FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
+# Use an Ubuntu base image
+FROM ubuntu:20.04
 
 
 # System Dependencies
 # =============================================================================
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
+# Avoid prompts during package installation
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install basic utilities
+RUN apt-get update && apt-get install -y \
     wget \
-    # ffmpeg \
-    # libsm6 \
-    # libxext6 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    git \
+    python3-pip \
+    python3-dev \
+    build-essential
 
 
 # Python Dependencies
 # =============================================================================
 
-# Install Python dependencies
-# RUN pip install --no-cache-dir -r requirements.txt
-COPY requirements.txt /tmp/
-RUN pip install --requirement /tmp/requirements.txt
+# Link python3 to python
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# Upgrade pip
+RUN pip3 install --upgrade pip
+
+# Install PyTorch with CUDA support
+RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+
+# Copy the requirements file and install Python dependencies
+COPY etc/requirements.txt /tmp/
+RUN pip3 install -r /tmp/requirements.txt
+
 
 # Install
 # =============================================================================
 
-# Install any needed packages specified in requirements.txt
+# Set the working directory
+WORKDIR /app
+
+# Copy the rest of your application's code
+COPY . /app
 
 
 
@@ -46,5 +59,5 @@ RUN pip install --requirement /tmp/requirements.txt
 # Entrypoint
 # =============================================================================
 
-# Run the application
-CMD ["python", "./src/my_script.py"]
+# Command to run on container start
+CMD ["python", "app.py"]
