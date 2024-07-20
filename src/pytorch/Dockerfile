@@ -23,7 +23,8 @@ RUN apt-get update && apt-get install -y \
     git \
     python3-pip \
     python3-dev \
-    build-essential
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 
 # Python Dependencies
@@ -35,12 +36,22 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Upgrade pip
 RUN pip3 install --upgrade pip
 
+# Install Poetry
+RUN pip3 install poetry
+
+# Set poetry environment variables (not to create virtual environments)
+ENV POETRY_HOME=/etc/poetry
+ENV PATH="$POETRY_HOME/bin:$PATH"
+ENV POETRY_NO_INTERACTION=1
+ENV POETRY_VIRTUALENVS_CREATE=false
+
+
 # Install PyTorch with CUDA support
-RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+# RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 
 # Copy the requirements file and install Python dependencies
-COPY etc/requirements.txt /tmp/
-RUN pip3 install -r /tmp/requirements.txt
+# COPY etc/requirements.txt /tmp/
+# RUN pip3 install -r /tmp/requirements.txt
 
 
 # Install
@@ -48,6 +59,12 @@ RUN pip3 install -r /tmp/requirements.txt
 
 # Set the working directory
 WORKDIR /app
+
+# Copy the pyproject.toml and optionally poetry.lock file
+COPY pyproject.toml poetry.lock* /app/
+
+# Install dependencies using poetry
+RUN poetry install --no-root --no-dev
 
 # Copy the rest of your application's code
 COPY . /app
