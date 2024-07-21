@@ -1,4 +1,4 @@
-# Copyright Starling Associates BV. All rights reserved.
+# Copyright Scape Agency BV. All rights reserved.
 
 name: Docker Publish
 
@@ -69,17 +69,8 @@ jobs:
           echo Need: $NEED
 
 
-
-
       # Registry Login
       # =======================================================================
-
-      # - name: Login to ACR
-      #   uses: azure/docker-login@v1
-      #   with:
-      #     login-server: ${{ secrets.REGISTRY_ENDPOINT }}
-      #     username: ${{ secrets.REGISTRY_USERNAME }}
-      #     password: ${{ secrets.REGISTRY_PASSWORD }}
 
       -
         name: Login to GHCR
@@ -113,7 +104,6 @@ jobs:
             org.opencontainers.image.title=hello-world-buildx
             org.opencontainers.image.vendor=${{ github.repository_owner }}
 
-
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -126,9 +116,7 @@ jobs:
         name: Build image
         uses: docker/bake-action@v2
         env:
-          # GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          # REGISTRY_ENDPOINT: ${{ secrets.REGISTRY_ENDPOINT }}
-          REGISTRY_ENDPOINT: scapefoundation
+          REGISTRY_ENDPOINT: ${{ secrets.DOCKERHUB_ORGANIZATION }}
           REPOSITORY_ENDPOINT: ghcr.io/${{ github.repository }}
           IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
           BRANCH: ${{ env.BRANCH }}
@@ -136,9 +124,6 @@ jobs:
         with:
           files: |
             ./bin/docker-bake.hcl
-          # ${{ steps.meta.outputs.bake-file }}
           targets: image-all
-          # pull: true
           push: true
-          # push: ${{ github.event_name != 'pull_request' }}
   
