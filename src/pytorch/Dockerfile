@@ -7,8 +7,19 @@
 # Use the official PyTorch image from NVIDIA as a base image
 # FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
 # Use an Ubuntu base image
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
+
+# System Dependencies
+# =============================================================================
+
+# syntax=docker/dockerfile:1.4
+
+# Base Image
+# =============================================================================
+
+# Use Ubuntu 24.04 as the base image
+FROM ubuntu:24.04
 
 # System Dependencies
 # =============================================================================
@@ -16,7 +27,7 @@ FROM ubuntu:20.04
 # Avoid prompts during package installation
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install basic utilities
+# Install system dependencies required for the project
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -24,26 +35,31 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-dev \
     build-essential \
+    # Clean up to reduce image size
     && rm -rf /var/lib/apt/lists/*
+
 
 
 # Python Dependencies
 # =============================================================================
 
-# Link python3 to python
+# Link python3 to python for compatibility
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Upgrade pip
+# Upgrade pip to its latest version
 RUN pip3 install --upgrade pip
 
-# Install Poetry
+# Install Poetry - a dependency manager for Python
 RUN pip3 install poetry
 
-# Set poetry environment variables (not to create virtual environments)
-ENV POETRY_HOME=/etc/poetry
-ENV PATH="$POETRY_HOME/bin:$PATH"
-ENV POETRY_NO_INTERACTION=1
-ENV POETRY_VIRTUALENVS_CREATE=false
+# Configure poetry:
+# Disable virtualenv creation inside the Docker environment
+# This is because Docker already provides an isolated environment
+ENV POETRY_HOME=/etc/poetry \
+    PATH="$POETRY_HOME/bin:$PATH" \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_CREATE=false
+
 
 
 # Install PyTorch with CUDA support
@@ -57,19 +73,17 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 # Install
 # =============================================================================
 
-# Set the working directory
+# Set the working directory to /app
 WORKDIR /app
 
-# Copy the pyproject.toml and optionally poetry.lock file
-COPY pyproject.toml poetry.lock* /app/
+# Copy only the pyproject.toml and poetry.lock* files to use cache effectively
+COPY etc/pyproject.toml etc/poetry.lock* /app/
 
-# Install dependencies using poetry
+# Install dependencies specified in Poetry configuration without installing the package itself
 RUN poetry install --no-root --no-dev
 
-# Copy the rest of your application's code
-COPY . /app
-
-
+# Copy the rest of your application's code into the container
+# COPY . /app
 
 
 
