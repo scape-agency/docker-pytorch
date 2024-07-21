@@ -28,6 +28,7 @@ FROM ubuntu:24.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies required for the project
+# Update and install system dependencies in one layer
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -35,9 +36,9 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-dev \
     build-essential \
+    && apt-get clean \
     # Clean up to reduce image size
     && rm -rf /var/lib/apt/lists/*
-
 
 
 # Python Dependencies
@@ -46,16 +47,21 @@ RUN apt-get update && apt-get install -y \
 # Link python3 to python for compatibility
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Upgrade pip to its latest version
-RUN pip3 install --upgrade pip
 
-# Install Poetry - a dependency manager for Python
-RUN pip3 install poetry
+# Upgrade pip and install Poetry in one layer to avoid intermediate issues
+RUN \
+    # Upgrade pip to its latest version
+    pip3 install --upgrade pip && \
+    # Install Poetry - a dependency manager for Python
+    pip3 install poetry
+
 
 # Configure poetry:
 # Disable virtualenv creation inside the Docker environment
 # This is because Docker already provides an isolated environment
-ENV POETRY_HOME=/etc/poetry \
+# Set Poetry environment variables
+ENV \
+    POETRY_HOME=/etc/poetry \
     PATH="$POETRY_HOME/bin:$PATH" \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false
