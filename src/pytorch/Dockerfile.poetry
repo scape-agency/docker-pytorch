@@ -1,0 +1,106 @@
+# syntax=docker/dockerfile:1.4
+
+# Base Image
+# =============================================================================
+
+# Use Ubuntu 24.04 as the base image
+FROM ubuntu:24.04
+
+# System Dependencies
+# =============================================================================
+
+# Avoid prompts during package installation
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies required for the project
+# Update and install system dependencies in one layer
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    git \
+    python3-pip \
+    python3-dev \
+    # python3-full \
+    python3-venv \
+    build-essential \
+    && apt-get clean \
+    # Clean up to reduce image size
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Python Dependencies
+# =============================================================================
+
+# Create a virtual environment
+RUN python3 -m venv /opt/venv
+
+# Set environment variable to use the virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Link python3 to python for compatibility
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# Upgrade pip and install Poetry in one layer to avoid intermediate issues
+RUN \
+    # Upgrade pip to its latest version
+    pip3 install --upgrade pip && \
+    # Ensure setuptools is up-to-date
+    pip3 install --upgrade setuptools && \
+    # Ensure wheel is up-to-date
+    pip3 install --upgrade wheel && \
+    # Install Poetry - a dependency manager for Python
+    pip3 install poetry && \
+    # Install PyTorch with CUDA support
+    pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+
+
+
+# Install Python tools
+# RUN pip install --upgrade pip setuptools wheel  # Ensure both setuptools and wheel are updated
+
+
+# Set Poetry environment variables
+# Disable virtualenv creation inside the Docker environment
+# This is because Docker already provides an isolated environment
+ENV \
+    POETRY_HOME=/etc/poetry \
+    PATH="$POETRY_HOME/bin:$PATH" \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_CREATE=false
+
+# Avoid creating virtual environments
+RUN poetry config virtualenvs.create false
+# Configure Poetry to use PEP 517 builds
+# RUN poetry config experimental.new-installer false
+
+# Copy the requirements file and install Python dependencies
+# COPY etc/requirements.txt /tmp/
+# RUN pip3 install -r /tmp/requirements.txt
+
+
+# Install
+# =============================================================================
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy only the pyproject.toml and poetry.lock* files to use cache effectively
+COPY ./etc/pyproject.toml /app/
+# COPY ./etc/poetry.lock* /app/
+
+# Install dependencies specified in Poetry configuration without installing the package itself
+# RUN poetry install --no-root
+RUN poetry install --no-root --only "main"
+
+
+
+# Copy the rest of your application's code into the container
+# COPY . /app
+
+
+
+# Entrypoint
+# =============================================================================
+
+# Command to run on container start
+CMD ["python", "app.py"]
