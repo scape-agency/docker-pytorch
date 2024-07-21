@@ -1,4 +1,40 @@
 {
-    "name": "devenv",
-    "dockerFile": "Dockerfile"
-} 
+    "name": "Docker Builder",
+    "dockerFile": "Dockerfile",
+    
+    // Set default settings for VS Code when operating within the container
+    "settings": { 
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+            "bash": {
+                "path": "/bin/bash"
+            }
+        },
+        "docker.enableBuildKit": true  // Enables Docker BuildKit for improved build performance
+    },
+
+    // List of recommended VS Code extensions for this development environment
+    "extensions": [
+        "ms-azuretools.vscode-docker",
+        "editorconfig.editorconfig",  // Helps maintain consistent coding styles
+        "github.vscode-pull-request-github"  // Enhances GitHub workflow integration
+    ],
+
+    // Runtime arguments to ensure Docker-in-Docker can operate properly
+    "runArgs": [
+        "--privileged",  // Necessary for Docker-in-Docker to access host Docker daemon
+        "--security-opt", "seccomp=unconfined"  // Optionally reduce restrictions to allow certain debugging tools
+    ],
+
+    // Use a specific user for container operations to enhance security
+    "remoteUser": "developer",
+
+    // Forward common ports used in development (adjust according to your needs)
+    "forwardPorts": [
+        8080, // Common web server port
+        5000  // Common port for local testing
+    ],
+
+    // Custom scripts to run when the container starts to ensure everything is ready
+    "postCreateCommand": "echo 'Container ready!'"
+}
