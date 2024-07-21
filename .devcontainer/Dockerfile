@@ -1,1 +1,7 @@
-FROM ubuntu:24.04
+# syntax=docker/dockerfile:1.4
+
+
+# Base Image
+# =============================================================================
+
+FROM kockums/docker-devcontainer:latest
