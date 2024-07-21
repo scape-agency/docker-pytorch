@@ -1,20 +1,5 @@
 # syntax=docker/dockerfile:1.4
 
-
-# Base Image
-# =============================================================================
-
-# Use the official PyTorch image from NVIDIA as a base image
-# FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
-# Use an Ubuntu base image
-FROM ubuntu:24.04
-
-
-# System Dependencies
-# =============================================================================
-
-# syntax=docker/dockerfile:1.4
-
 # Base Image
 # =============================================================================
 
@@ -61,53 +46,26 @@ RUN \
     pip3 install --upgrade pip && \
     # Ensure setuptools is up-to-date
     pip3 install --upgrade setuptools && \
+    # Ensure wheel is up-to-date
+    pip3 install --upgrade wheel && \
     # Install Poetry - a dependency manager for Python
     pip3 install poetry && \
     # Install PyTorch with CUDA support
     pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 
-# Set Poetry environment variables
-# Disable virtualenv creation inside the Docker environment
-# This is because Docker already provides an isolated environment
-ENV \
-    POETRY_HOME=/etc/poetry \
-    PATH="$POETRY_HOME/bin:$PATH" \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false
 
 
 
 
 # Copy the requirements file and install Python dependencies
-# COPY etc/requirements.txt /tmp/
-# RUN pip3 install -r /tmp/requirements.txt
+COPY ./etc/requirements.txt /tmp/
+RUN pip3 install -r /tmp/requirements.txt
 
-
-# Install
-# =============================================================================
-
-# Set the working directory to /app
+# Set the working directory
 WORKDIR /app
 
-# Copy only the pyproject.toml and poetry.lock* files to use cache effectively
-COPY ./etc/pyproject.toml /app/
-# COPY ./etc/poetry.lock* /app/
-
-# Install dependencies specified in Poetry configuration without installing the package itself
-# RUN poetry install --no-root
-RUN poetry install --no-root --only "main"
-
-RUN poetry config virtualenvs.create false  # Avoid creating virtual environments
-# Configure Poetry to use PEP 517 builds
-RUN poetry config experimental.new-installer false
-
-# Copy the rest of your application's code into the container
-# COPY . /app
-
-
-
-# Entrypoint
-# =============================================================================
+# Copy the rest of your application's code
+COPY . /app
 
 # Command to run on container start
 CMD ["python", "app.py"]
