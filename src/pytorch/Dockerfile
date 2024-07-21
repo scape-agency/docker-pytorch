@@ -35,6 +35,8 @@ RUN apt-get update && apt-get install -y \
     git \
     python3-pip \
     python3-dev \
+    # python3-full \
+    python3-venv \
     build-essential \
     && apt-get clean \
     # Clean up to reduce image size
@@ -44,22 +46,29 @@ RUN apt-get update && apt-get install -y \
 # Python Dependencies
 # =============================================================================
 
+# Create a virtual environment
+RUN python3 -m venv /opt/venv
+
+# Set environment variable to use the virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
+
 # Link python3 to python for compatibility
 RUN ln -s /usr/bin/python3 /usr/bin/python
-
 
 # Upgrade pip and install Poetry in one layer to avoid intermediate issues
 RUN \
     # Upgrade pip to its latest version
     pip3 install --upgrade pip && \
+    # Ensure setuptools is up-to-date
+    pip3 install --upgrade setuptools && \
     # Install Poetry - a dependency manager for Python
-    pip3 install poetry
+    pip3 install poetry && \
+    # Install PyTorch with CUDA support
+    pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 
-
-# Configure poetry:
+# Set Poetry environment variables
 # Disable virtualenv creation inside the Docker environment
 # This is because Docker already provides an isolated environment
-# Set Poetry environment variables
 ENV \
     POETRY_HOME=/etc/poetry \
     PATH="$POETRY_HOME/bin:$PATH" \
@@ -68,8 +77,6 @@ ENV \
 
 
 
-# Install PyTorch with CUDA support
-# RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 
 # Copy the requirements file and install Python dependencies
 # COPY etc/requirements.txt /tmp/
@@ -83,10 +90,16 @@ ENV \
 WORKDIR /app
 
 # Copy only the pyproject.toml and poetry.lock* files to use cache effectively
-COPY etc/pyproject.toml etc/poetry.lock* /app/
+COPY ./etc/pyproject.toml /app/
+# COPY ./etc/poetry.lock* /app/
 
 # Install dependencies specified in Poetry configuration without installing the package itself
-RUN poetry install --no-root --no-dev
+# RUN poetry install --no-root
+RUN poetry install --no-root --only "main"
+
+RUN poetry config virtualenvs.create false  # Avoid creating virtual environments
+# Configure Poetry to use PEP 517 builds
+RUN poetry config experimental.new-installer false
 
 # Copy the rest of your application's code into the container
 # COPY . /app
