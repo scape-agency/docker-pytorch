@@ -114,7 +114,7 @@ jobs:
 
       -
         name: Build image
-        uses: docker/bake-action@v2
+        uses: docker/bake-action@v5
         env:
           REGISTRY_ENDPOINT: ${{ secrets.DOCKERHUB_ORGANIZATION }}
           REPOSITORY_ENDPOINT: ghcr.io/${{ github.repository }}
